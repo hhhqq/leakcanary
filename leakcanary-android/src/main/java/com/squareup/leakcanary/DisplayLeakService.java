@@ -129,5 +129,30 @@ public class DisplayLeakService extends AbstractAnalysisResultService {
    * AnalysisResult#excludedLeak} first.
    */
   protected void afterDefaultHandling(HeapDump heapDump, AnalysisResult result, String leakInfo) {
+    boolean shouldSaveResult = result.leakFound || result.failure != null;
+    if (shouldSaveResult) {
+      saveResult2(heapDump, result, leakInfo);
+    }
+  }
+
+  private boolean saveResult2(HeapDump heapDump, AnalysisResult result, String leakInfo) {
+    File resultFile = new File(heapDump.heapDumpFile.getParentFile(),
+            heapDump.heapDumpFile.getName() + ".leakinfo");
+    FileOutputStream fos = null;
+    try {
+      fos = new FileOutputStream(resultFile);
+      fos.write(leakInfo.getBytes());
+      return true;
+    } catch (IOException e) {
+      CanaryLog.d(e, "Could not save leakInfo analysis result to disk.");
+    } finally {
+      if (fos != null) {
+        try {
+          fos.close();
+        } catch (IOException ignored) {
+        }
+      }
+    }
+    return false;
   }
 }
